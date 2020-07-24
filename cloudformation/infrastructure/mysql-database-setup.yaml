@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: MySQL Database Setup
+
+Parameters:
+  DbHost:
+    Type: String
+  DbName:
+    Type: String
+  DbUsername:
+    Type: String
+  DbPassword:
+    Type: String
+  PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
+
+Resources:
+
+  LambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: 'Enable-Role'
+      Path: "/"
+      ManagedPolicyArns:
+        - !Ref RolePolicies
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+
+  RolePolicies:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      ManagedPolicyName: "LambdaExecutionRole-policy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:       
+        - Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          - logs:PutResourcePolicy
+          - logs:DeleteResourcePolicy
+          - s3:PutObject
+          - s3:ListBucket
+          - s3:PutObjectAcl
+          - s3:GetObject
+          - s3:GetObjectAcl
+          - s3:DeleteObject
+          - ec2:*
+          Resource:
+          - "*" 
+
+  MySQLSetupLambda:
+    Type: "AWS::Lambda::Function"
+    Properties: 
+      Handler: "mysql-database-setup.handler"
+      Role: 
+        Fn::GetAtt: 
+          - "LambdaExecutionRole"
+          - "Arn"
+      Code: 
+        S3Bucket: postulent-lambda-zip
+        S3Key: function.zip
+      Runtime: "python3.7"
+      Timeout: 60
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSG
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+
+  MySQLSetupCustomResource:
+    Type: Custom::MySQLSetupCustomResource
+    Version: '1.0'
+    Properties:
+      ServiceToken: !GetAtt MySQLSetupLambda.Arn
+      MySQLDbHost: !Ref DbHost
+      MySQLDbName: !Ref DbName
+      MySQLDbUsername: !Ref DbUsername
+      MySQLDbPassword: !Ref DbPassword

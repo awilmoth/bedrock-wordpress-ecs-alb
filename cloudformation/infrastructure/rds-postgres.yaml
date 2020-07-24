@@ -1,0 +1,59 @@
+Description: >
+  This template deploys a Postgres RDS instance
+
+Parameters:
+  StackName:
+    Type: String
+    Description: The name of the stack
+
+  PrivateSubnets:
+    Description: List of private subnets for RDS
+    Type: String
+
+  SourceSecurityGroupId:
+    Description: VPC Security Group ID
+    Type: AWS::EC2::SecurityGroup::Id
+
+Resources:
+  DatabaseSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "RDS-DBSG"
+      VpcId:
+        Fn::ImportValue: !Sub ${StackName}:VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref SourceSecurityGroupId
+
+  DBSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupName: "My DB Subnet Group"
+      DBSubnetGroupDescription: !Ref "AWS::StackName"
+      SubnetIds: !Split [",", !Ref PrivateSubnets]
+
+  RDSPostgres:
+    Type: "AWS::RDS::DBInstance"
+    DeletionPolicy: Delete
+    Properties:
+      AllocatedStorage: "5"
+      DBInstanceClass: db.t3.micro
+      Engine: "postgres"
+      EngineVersion: "10.6"
+      MasterUsername: "postgres"
+      MasterUserPassword: "postgres"
+      Port: "5432"
+      PubliclyAccessible: true
+      StorageType: standard
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !GetAtt DatabaseSecurityGroup.GroupId
+
+Outputs:
+  RDSHost:
+    Description: Hostname for the Postgres DB instance
+    Value: !GetAtt RDSPostgres.Endpoint.Address
+    Export:
+      Name: !Sub ${StackName}:RDSHost

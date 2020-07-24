@@ -1,0 +1,60 @@
+Description: >
+  This template deploys a MySQL RDS instance
+
+Parameters:
+  StackName:
+    Type: String
+    Description: The name of the stack
+
+  PrivateSubnets:
+    Description: List of private subnets for RDS
+    Type: String
+
+  SourceSecurityGroupId:
+    Description: VPC Security Group ID
+    Type: AWS::EC2::SecurityGroup::Id
+
+
+Resources:
+  MySQLDatabaseSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "MySQL RDS-DBSG"
+      VpcId:
+        Fn::ImportValue: !Sub ${StackName}:VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref SourceSecurityGroupId
+
+  MySQLDBSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupName: "MySQL DB Subnet Group"
+      DBSubnetGroupDescription: !Ref "AWS::StackName"
+      SubnetIds: !Split [",", !Ref PrivateSubnets]
+
+  RDSMySQL:
+    Type: "AWS::RDS::DBInstance"
+    DeletionPolicy: Delete
+    Properties:
+      AllocatedStorage: "5"
+      DBInstanceClass: db.t3.micro
+      Engine: "mysql"
+      EngineVersion: "5.7"
+      MasterUsername: "aaron"
+      MasterUserPassword: "aaronrules"
+      Port: "3306"
+      PubliclyAccessible: true
+      StorageType: standard
+      DBSubnetGroupName: !Ref MySQLDBSubnetGroup
+      VPCSecurityGroups:
+        - !GetAtt MySQLDatabaseSecurityGroup.GroupId
+
+Outputs:
+  RDSMySQLHost:
+    Description: Hostname for the MySQL DB instance
+    Value: !GetAtt RDSMySQL.Endpoint.Address
+    Export:
+      Name: !Sub ${StackName}:RDSMySQLHost
