@@ -220,29 +220,21 @@ Resources:
       Port: '32806'
       VpcId: !Ref TargetGroupVPC
       HealthCheckPath: "/"
-      Matcher:
-        HttpCode: "200-499"
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
-          Value: 120
+          Value: 20
 
   HttpListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     DependsOn:
       - TargetGroup
     Properties:
-      DefaultActions:
-        - RedirectConfig:
-            Host: "#{host}"
-            Path: "/#{path}"
-            Port: 443
-            Protocol: "HTTPS"
-            Query: "#{query}"
-            StatusCode: HTTP_301
-          Type: redirect
       LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
+      Port: '80'
       Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
 
   HttpsListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
