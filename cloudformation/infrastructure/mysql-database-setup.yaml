@@ -14,6 +14,8 @@ Parameters:
     Type: String
   PrivateSubnet2:
     Type: String
+  VpcId:
+    Type: String
 
 Resources:
 
@@ -41,20 +43,21 @@ Resources:
         Statement:       
         - Effect: Allow
           Action:
-          - logs:CreateLogGroup
-          - logs:CreateLogStream
-          - logs:PutLogEvents
-          - logs:PutResourcePolicy
-          - logs:DeleteResourcePolicy
-          - s3:PutObject
-          - s3:ListBucket
-          - s3:PutObjectAcl
-          - s3:GetObject
-          - s3:GetObjectAcl
-          - s3:DeleteObject
+          - logs:*
+          - s3:*
           - ec2:*
           Resource:
           - "*" 
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the ECS hosts that run containers.
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 0
+          IpProtocol: tcp
+          ToPort: 65535
 
   MySQLSetupLambda:
     Type: "AWS::Lambda::Function"
@@ -68,10 +71,10 @@ Resources:
         S3Bucket: postulent-lambda-zip
         S3Key: function.zip
       Runtime: "python3.7"
-      Timeout: 60
+      Timeout: 180
       VpcConfig:
         SecurityGroupIds:
-          - !Ref LambdaSG
+          - !Ref LambdaSecurityGroup
         SubnetIds:
           - !Ref PrivateSubnet1
           - !Ref PrivateSubnet2

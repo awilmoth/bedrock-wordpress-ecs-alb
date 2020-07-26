@@ -149,31 +149,32 @@ Resources:
         StackName: !Ref StackName
         AppUrl: !Ref AppUrl
 
-#  WordpressECS:
-#    Type: AWS::CloudFormation::Stack
-#    Properties:
-#      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/wordpress.yaml
-#      Parameters:
-#        ecsServiceRole: !GetAtt ServiceRole.Outputs.ServiceRole
-#        HostedZone: !Ref HostedZoneId
-#        Hostname: !Ref AppUrl
-#        ECSCluster: !GetAtt ECS.Outputs.ECSCluster
-#        SSLCertificateArn: arn:aws:acm:us-east-1:802759398275:certificate/030c4491-725b-4457-a18f-b6d9acab5201
-#        ELBSubnet1: !GetAtt VPC.Outputs.PublicSubnetOne
-#        ELBSubnet2: !GetAtt VPC.Outputs.PublicSubnetTwo
-#        TargetGroupVPC: !GetAtt VPC.Outputs.VPC
-#        AppName: !Ref StackName
-#        DesiredCount: 2
-#        DockerImage: 802759398275.dkr.ecr.us-east-1.amazonaws.com/wordpress:latest
-##        DbHost: !GetAtt RDSMySQLDB.Outputs.RDSMySQLHost
-##        DbName: wordpress
-##        DbUsername: aaron
-##        DbPassword: aaronrules
-#        Memory: 1000
-#        MemoryReservation: 300
-#    DependsOn:
-#    - RDSMySQLDB
-#    - ECS
+  WordpressECS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/wordpress.yaml
+      Parameters:
+        ecsServiceRole: !GetAtt ServiceRole.Outputs.ServiceRole
+        HostedZone: !Ref HostedZoneId
+        Hostname: !Ref AppUrl
+        ECSCluster: !GetAtt ECS.Outputs.ECSCluster
+        SSLCertificateArn: arn:aws:acm:us-east-1:802759398275:certificate/030c4491-725b-4457-a18f-b6d9acab5201
+        ELBSubnet1: !GetAtt VPC.Outputs.PublicSubnetOne
+        ELBSubnet2: !GetAtt VPC.Outputs.PublicSubnetTwo
+        TargetGroupVPC: !GetAtt VPC.Outputs.VPC
+        AppName: !Ref StackName
+        DesiredCount: 2
+        DockerImage: 802759398275.dkr.ecr.us-east-1.amazonaws.com/wordpress:latest
+        DbHost: !GetAtt RDSMySQLDB.Outputs.RDSMySQLHost
+        DbName: wordpress
+        DbUsername: aaron
+        DbPassword: aaronrules
+        Memory: 1000
+        MemoryReservation: 300
+    DependsOn:
+    - RDSMySQLDB
+    - ECS
+    - WordpressDB
 
   WordpressDB:
     Type: AWS::CloudFormation::Stack
@@ -186,6 +187,7 @@ Resources:
         DbPassword: aaronrules
         PrivateSubnet1: !GetAtt VPC.Outputs.PrivateSubnetOne
         PrivateSubnet2: !GetAtt VPC.Outputs.PrivateSubnetOne
+        VpcId: !GetAtt VPC.Outputs.VPC
     DependsOn:
     - RDSMySQLDB
 

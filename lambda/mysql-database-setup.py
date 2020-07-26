@@ -12,52 +12,66 @@ def run_sql_commands(db_host, db_name, db_user, db_password):
     connection = pymysql.connect(host=db_host,
                                  user=db_user,
                                  password=db_password,
-                                 db=db_name,
+                                 db='mysql',
                                  charset='utf8',
                                  cursorclass=pymysql.cursors.DictCursor)
 
-    try:
-        with connection.cursor() as cursor:
-            # Create a new record
-            sql = "CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;"
-            cursor.execute(sql)
+    with connection.cursor() as cursor:
+        sql = "DROP DATABASE IF EXISTS wordpress"
+        cursor.execute(sql)
+    connection.commit()
+
+    with connection.cursor() as cursor:
+        # Create a new record
+        sql = "CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;"
+        cursor.execute(sql)
         # connection is not autocommit by default. So you must commit to save
         # your changes.
-        connection.commit()
+    connection.commit()
 
-        with connection.cursor() as cursor:
-            sql = "CREATE USER 'aaron'@'localhost' IDENTIFIED BY 'aaronrules';"
-            cursor.execute(sql)
-        connection.commit()
+    with connection.cursor() as cursor:
+        sql = "DROP USER IF EXISTS 'aaron'@'localhost';"
+        cursor.execute(sql)
+    connection.commit()
 
-        with connection.cursor() as cursor:
-            sql = "GRANT ALL ON wordpress.* TO 'aaron'@'localhost';"
-            cursor.execute(sql)
-        connection.commit()
+    with connection.cursor() as cursor:
+        sql = "CREATE USER 'aaron'@'localhost' IDENTIFIED BY 'aaronrules';"
+        cursor.execute(sql)
+    connection.commit()
 
-    finally:
-        connection.close()
+    with connection.cursor() as cursor:
+        sql = "GRANT ALL ON wordpress.* TO 'aaron'@'localhost';"
+        cursor.execute(sql)
+    connection.commit()
+
+    connection.close()
     return
 
 
 def handler(event, context):
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     host = event['ResourceProperties']['MySQLDbHost']
     name = event['ResourceProperties']['MySQLDbName']
     username = event['ResourceProperties']['MySQLDbUsername']
     password = event['ResourceProperties']['MySQLDbPassword']
-    run_sql_commands(host, name, username, password)
+    response_data = {}
     try:
 
         if event['RequestType'] == 'Delete':
             logger.info('Deleted!')
+            response_data['Data'] = "SUCCESS"
             cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
             return
 
-        logger.info('It worked!')
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+        if event['RequestType'] == 'Create':
+            logger.info('It worked!')
+            run_sql_commands(host, name, username, password)
+            response_data['Data'] = "SUCCESS"
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+            return
 
     except Exception:
         logger.exception('Signaling failure to CloudFormation.')
+        response_data['Data'] = "FAILED"
         cfnresponse.send(event, context, cfnresponse.FAILED, {})

@@ -74,15 +74,15 @@ Resources:
               awslogs-group: !Ref LogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: web
-#          Environment:
-#            - Name: WORDPRESS_DB_HOST
-#              Value: !Ref DbHost
-#            - Name: WORDPRESS_DB_NAME
-#              Value: !Ref DbName
-#            - Name: WORDPRESS_DB_USER
-#              Value: !Ref DbUsername
-#            - Name: WORDPRESS_DB_PASSWORD
-#              Value: !Ref DbPassword
+          Environment:
+            - Name: WORDPRESS_DB_HOST
+              Value: !Ref DbHost
+            - Name: WORDPRESS_DB_NAME
+              Value: !Ref DbName
+            - Name: WORDPRESS_DB_USER
+              Value: !Ref DbUsername
+            - Name: WORDPRESS_DB_PASSWORD
+              Value: !Ref DbPassword
       Family: !Ref AWS::StackName
 
   WebService:
