@@ -10,9 +10,9 @@ Parameters:
     Type: String
   DbPassword:
     Type: String
-  PrivateSubnet1:
+  PublicSubnet1:
     Type: String
-  PrivateSubnet2:
+  PublicSubnet2:
     Type: String
   VpcId:
     Type: String
@@ -46,6 +46,7 @@ Resources:
           - logs:*
           - s3:*
           - ec2:*
+          - rds:*
           Resource:
           - "*" 
   LambdaSecurityGroup:
@@ -76,8 +77,8 @@ Resources:
         SecurityGroupIds:
           - !Ref LambdaSecurityGroup
         SubnetIds:
-          - !Ref PrivateSubnet1
-          - !Ref PrivateSubnet2
+          - !Ref PublicSubnet1
+          - !Ref PublicSubnet2
 
   MySQLSetupCustomResource:
     Type: Custom::MySQLSetupCustomResource

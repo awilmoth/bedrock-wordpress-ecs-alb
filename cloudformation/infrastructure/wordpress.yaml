@@ -41,6 +41,7 @@ Parameters:
     Description: "Database password"
     Type: String
     NoEcho: 'true'
+
   Memory:
     Description: "Max allocated memory for a container"
     Type: Number
@@ -66,8 +67,9 @@ Resources:
           Memory: !Ref Memory
           MemoryReservation: !Ref MemoryReservation
           Privileged: 'true'
-          PortMappings:
-            - ContainerPort: 80
+          portMappings:
+            - containerPort: 80
+              hostPort: 8000
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -75,14 +77,22 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: web
           Environment:
-            - Name: WORDPRESS_DB_HOST
+            - Name: DB_HOST
               Value: !Ref DbHost
-            - Name: WORDPRESS_DB_NAME
+            - Name: DB_NAME
               Value: !Ref DbName
-            - Name: WORDPRESS_DB_USER
+            - Name: DB_USER
               Value: !Ref DbUsername
-            - Name: WORDPRESS_DB_PASSWORD
+            - Name: DB_PASSWORD
               Value: !Ref DbPassword
+            - Name: SERVER_NAME
+              Value: !Ref Hostname
+            - Name: WP_HOME
+              Value: !Join [ '', [ 'https://', !Ref Hostname ] ]
+            - Name: WP_SITEURL
+              Value: !Join [ '', [ 'https://', !Ref Hostname , '/wp' ] ]
+            - Name: SMTP_HOST
+              Value: "email-smtp.us-east-1.amazonaws.com"
       Family: !Ref AWS::StackName
 
   WebService:
@@ -217,12 +227,14 @@ Resources:
       - LoadBalancer
     Properties:
       Protocol: HTTP
-      Port: '32806'
+      Port: '8000'
+      Matcher:
+        HttpCode: 200-399
       VpcId: !Ref TargetGroupVPC
       HealthCheckPath: "/"
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
-          Value: 20
+          Value: 180
 
   HttpListener:
     Type: AWS::ElasticLoadBalancingV2::Listener

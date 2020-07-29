@@ -5,6 +5,9 @@ Parameters:
   StackName:
     Type: String
     Description: The name of the stack
+  AppUrl:
+    Type: String
+    Description: The name of the app
 
 Mappings:
   SubnetConfig:
@@ -105,22 +108,37 @@ Resources:
       SubnetId: !Ref PublicSubnetTwo
       RouteTableId: !Ref PublicRouteTable
 
+  PrivateHostedZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      HostedZoneConfig:
+        Comment: 'My private hosted zone'
+      Name: !Ref AppUrl
+      VPCs:
+        -
+          VPCId: !Ref VPC
+          VPCRegion: 'us-east-1'
+
   VpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
-       PolicyDocument: '{
-         "Version":"2012-10-17",
-         "Statement":[{
-           "Effect":"Allow",
-           "Principal": "*",
-           "Action":"s3:*",
-           "Resource": "*"
-         }]
-       }'
-       RouteTableIds:
-        - !Ref PublicRouteTable
-       ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
-       VpcId: !Ref VPC
+      PolicyDocument: '{
+        "Version":"2012-10-17",
+        "Statement":[{
+          "Effect":"Allow",
+          "Principal": "*",
+          "Action":"s3:*",
+          "Resource": "*"
+        }]
+      }'
+      RouteTableIds:
+       - !Ref PublicRouteTable
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      VpcId: !Ref VPC
+      #PrivateDnsEnabled: true
+      VpcEndpointType: "Gateway"
+    DependsOn:
+    - PublicRouteTable
 
 Outputs:
   VPC:

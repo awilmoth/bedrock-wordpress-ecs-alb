@@ -26,7 +26,8 @@ Resources:
         - IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-          SourceSecurityGroupId: !Ref SourceSecurityGroupId
+          CidrIp: 10.0.0.0/16
+
 
   MySQLDBSubnetGroup:
     Type: "AWS::RDS::DBSubnetGroup"

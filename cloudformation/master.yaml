@@ -63,6 +63,7 @@ Resources:
     Properties:
       TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/vpc.yaml
       Parameters:
+        AppUrl: !Ref AppUrl
         StackName: !Ref StackName
 
   ALB:
@@ -79,37 +80,27 @@ Resources:
     DependsOn:
     - VPC
 
-  RDSPostgresDB:
-    Type: AWS::CloudFormation::Stack
-    Condition: UseRDS
-    Properties:
-      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/rds-postgres.yaml
-      Parameters:
-        StackName: !Ref StackName
-        PrivateSubnets: !GetAtt VPC.Outputs.PrivateSubnets
-        SourceSecurityGroupId: !GetAtt ECS.Outputs.ContainerInstanceSecurityGroup
-    DependsOn: ECS
+#  RDSPostgresDB:
+#    Type: AWS::CloudFormation::Stack
+#    Condition: UseRDS
+#    Properties:
+#      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/rds-postgres.yaml
+#      Parameters:
+#        StackName: !Ref StackName
+#        PrivateSubnets: !GetAtt VPC.Outputs.PrivateSubnets
+#        SourceSecurityGroupId: !GetAtt ECS.Outputs.ContainerInstanceSecurityGroup
+#    DependsOn: ECS
 
-  RDSMySQLDB:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/rds-mysql.yaml
-      Parameters:
-        StackName: !Ref StackName
-        PrivateSubnets: !GetAtt VPC.Outputs.PrivateSubnets
-        SourceSecurityGroupId: !GetAtt ECS.Outputs.ContainerInstanceSecurityGroup
-    DependsOn: ECS
-
-  ElastiCacheRedis:
-    Type: AWS::CloudFormation::Stack
-    Condition: UseElastiCache
-    Properties:
-      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/elasticache-redis.yaml
-      Parameters:
-        StackName: !Ref StackName
-        PrivateSubnets: !GetAtt VPC.Outputs.PrivateSubnets
-        SourceSecurityGroupId: !GetAtt ECS.Outputs.ContainerInstanceSecurityGroup
-    DependsOn: ECS
+#  ElastiCacheRedis:
+#    Type: AWS::CloudFormation::Stack
+#    Condition: UseElastiCache
+#    Properties:
+#      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/elasticache-redis.yaml
+#      Parameters:
+#        StackName: !Ref StackName
+#        PrivateSubnets: !GetAtt VPC.Outputs.PrivateSubnets
+#        SourceSecurityGroupId: !GetAtt ECS.Outputs.ContainerInstanceSecurityGroup
+#    DependsOn: ECS
 
   ECS:
     Type: AWS::CloudFormation::Stack
@@ -149,32 +140,42 @@ Resources:
         StackName: !Ref StackName
         AppUrl: !Ref AppUrl
 
-  WordpressECS:
+  RDSMySQLDB:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/wordpress.yaml
+      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/rds-mysql.yaml
       Parameters:
-        ecsServiceRole: !GetAtt ServiceRole.Outputs.ServiceRole
-        HostedZone: !Ref HostedZoneId
-        Hostname: !Ref AppUrl
-        ECSCluster: !GetAtt ECS.Outputs.ECSCluster
-        SSLCertificateArn: arn:aws:acm:us-east-1:802759398275:certificate/030c4491-725b-4457-a18f-b6d9acab5201
-        ELBSubnet1: !GetAtt VPC.Outputs.PublicSubnetOne
-        ELBSubnet2: !GetAtt VPC.Outputs.PublicSubnetTwo
-        TargetGroupVPC: !GetAtt VPC.Outputs.VPC
-        AppName: !Ref StackName
-        DesiredCount: 2
-        DockerImage: 802759398275.dkr.ecr.us-east-1.amazonaws.com/wordpress:latest
-        DbHost: !GetAtt RDSMySQLDB.Outputs.RDSMySQLHost
-        DbName: wordpress
-        DbUsername: aaron
-        DbPassword: aaronrules
-        Memory: 1000
-        MemoryReservation: 300
-    DependsOn:
-    - RDSMySQLDB
-    - ECS
-    - WordpressDB
+        StackName: !Ref StackName
+        PrivateSubnets: !GetAtt VPC.Outputs.PrivateSubnets
+        SourceSecurityGroupId: !GetAtt ECS.Outputs.ContainerInstanceSecurityGroup
+    DependsOn: ECS
+
+#  WordpressECS:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/wordpress.yaml
+#      Parameters:
+#        ecsServiceRole: !GetAtt ServiceRole.Outputs.ServiceRole
+#        HostedZone: !Ref HostedZoneId
+#        Hostname: !Ref AppUrl
+#        ECSCluster: !GetAtt ECS.Outputs.ECSCluster
+#        SSLCertificateArn: arn:aws:acm:us-east-1:802759398275:certificate/030c4491-725b-4457-a18f-b6d9acab5201
+#        ELBSubnet1: !GetAtt VPC.Outputs.PublicSubnetOne
+#        ELBSubnet2: !GetAtt VPC.Outputs.PublicSubnetTwo
+#        TargetGroupVPC: !GetAtt VPC.Outputs.VPC
+#        AppName: !Ref StackName
+#        DesiredCount: 2
+#        DockerImage: 802759398275.dkr.ecr.us-east-1.amazonaws.com/bedrock-wordpress:latest
+#        DbHost: !GetAtt RDSMySQLDB.Outputs.RDSMySQLHost
+#        DbName: wordpress
+#        DbUsername: aaron
+#        DbPassword: aaronrules
+#        Memory: 1000
+#        MemoryReservation: 300
+#    DependsOn:
+#    - RDSMySQLDB
+#    - ECS
+#    - WordpressDB
 
   WordpressDB:
     Type: AWS::CloudFormation::Stack
@@ -185,8 +186,8 @@ Resources:
         DbName: wordpress
         DbUsername: aaron
         DbPassword: aaronrules
-        PrivateSubnet1: !GetAtt VPC.Outputs.PrivateSubnetOne
-        PrivateSubnet2: !GetAtt VPC.Outputs.PrivateSubnetOne
+        PublicSubnet1: !GetAtt VPC.Outputs.PublicSubnetOne
+        PublicSubnet2: !GetAtt VPC.Outputs.PublicSubnetTwo
         VpcId: !GetAtt VPC.Outputs.VPC
     DependsOn:
     - RDSMySQLDB
