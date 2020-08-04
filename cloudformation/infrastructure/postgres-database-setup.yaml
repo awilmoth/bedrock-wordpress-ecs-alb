@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Postgres Database Setup
+
+Parameters:
+  DbHost:
+    Type: String
+  DbName:
+    Type: String
+  DbUsername:
+    Type: String
+  DbPassword:
+    Type: String
+  PublicSubnet1:
+    Type: String
+  PublicSubnet2:
+    Type: String
+  VpcId:
+    Type: String
+
+Resources:
+
+  LambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: 'Enable-Role'
+      Path: "/"
+      ManagedPolicyArns:
+        - !Ref RolePolicies
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+
+  RolePolicies:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      ManagedPolicyName: "LambdaExecutionRole-policy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:       
+        - Effect: Allow
+          Action:
+          - logs:*
+          - s3:*
+          - ec2:*
+          - rds:*
+          Resource:
+          - "*" 
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the ECS hosts that run containers.
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 0
+          IpProtocol: tcp
+          ToPort: 65535
+
+  PostgresSetupLambda:
+    Type: "AWS::Lambda::Function"
+    Properties: 
+      Handler: "postgres-database-setup.handler"
+      Role: 
+        Fn::GetAtt: 
+          - "LambdaExecutionRole"
+          - "Arn"
+      Code: 
+        S3Bucket: postulent-lambda-zip
+        S3Key: postgres.zip
+      Runtime: "python3.7"
+      Timeout: 180
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PublicSubnet1
+          - !Ref PublicSubnet2
+
+  PostgresSetupCustomResource:
+    Type: Custom::PostgresSetupCustomResource
+    Version: '1.0'
+    Properties:
+      ServiceToken: !GetAtt PostgresSetupLambda.Arn
+      PostgresDbHost: !Ref DbHost
+      PostgresDbName: !Ref DbName
+      PostgresDbUsername: !Ref DbUsername
+      PostgresDbPassword: !Ref DbPassword

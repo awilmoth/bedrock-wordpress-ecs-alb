@@ -129,6 +129,21 @@ Resources:
         SourceSecurityGroupId: !GetAtt ECS.Outputs.ContainerInstanceSecurityGroup
     DependsOn: ECS
 
+  PostgresDB:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://postulent-cfn.s3.amazonaws.com/infrastructure/postgres-database-setup.yaml
+      Parameters:
+        DbHost: !GetAtt RDSPostgresDB.Outputs.RDSPostgresHost
+        DbName: powertext-pegasus
+        DbUsername: aaron
+        DbPassword: aaronrules
+        PublicSubnet1: !GetAtt VPC.Outputs.PublicSubnetOne
+        PublicSubnet2: !GetAtt VPC.Outputs.PublicSubnetTwo
+        VpcId: !GetAtt VPC.Outputs.VPC
+    DependsOn:
+    - RDSPostgresDB
+
   ElastiCacheRedis:
     Type: AWS::CloudFormation::Stack
     Condition: UseElastiCache
