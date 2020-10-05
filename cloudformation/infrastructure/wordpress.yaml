@@ -41,7 +41,6 @@ Parameters:
     Description: "Database password"
     Type: String
     NoEcho: 'true'
-
   Memory:
     Description: "Max allocated memory for a container"
     Type: Number
