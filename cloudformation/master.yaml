@@ -7,9 +7,6 @@ Description: >
   It then deploys a highly available ECS cluster using an AutoScaling Group, with
   ECS hosts distributed across multiple Availability Zones.
 
-  Finally, it deploys a Django application and a celery worker from containers
-  published in Amazon EC2 Container Registry (Amazon ECR).
-
 Parameters:
   StackName:
     Type: String
